@@ -58,7 +58,23 @@ def run_agent(question:str):
         HumanMessage(content=question),
         
     ]
-
+    
+    #THE AGENT LOOP
+    for iteration in range(MAX_ITERATIONS+1): #send msg to lllm and then excute the tool for think
+        print(f"\n ----  Iteration {iteration} ----")
+        ai_message = llm_with_tools.invoke(messages) #call the tool with messages as input
+        tool_calls = ai_message.tool_calls
+        
+        #if no tool call - means agent doesn't need to think tm - direct final answer
+        
+        if not tool_calls:
+            print(f"FINAL ANSWER: {ai_message.content}")
+            return ai_message.content
+        
+        #seeing one tool call working -
+        tool_call = tool_calls[0] 
+        tool_name = tool_call.get("name") # getting the name of the tool
+        tool_input = tool_call.get("args") #getting args of the tool
 
 
 
