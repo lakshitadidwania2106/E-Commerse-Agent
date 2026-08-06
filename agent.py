@@ -34,7 +34,7 @@ def apply_discount(price: float, discount_tier: str) -> float:
 @traceable(name="Langchain Agent Loop")
 def run_agent(question:str):
     tools = [get_product_price, apply_discount]
-    total_dict= {t.name:t for t in tools}
+    tool_dict= {t.name:t for t in tools}
     
     llm = init_chat_model(f"ollama:{MODEL}",temperature=0)
     llm_with_tools = llm.bind_tools(tools)
@@ -74,8 +74,22 @@ def run_agent(question:str):
         #seeing one tool call working -
         tool_call = tool_calls[0] 
         tool_name = tool_call.get("name") # getting the name of the tool
-        tool_input = tool_call.get("args") #getting args of the tool
+        tool_args = tool_call.get("args",{}) #getting args of the tool
+        tool_call_id = tool_call.get("id")
+        
+        print(f"    [Tool Selected] {tool_name} with args: {tool_args}")
+        
+        tool_to_use = tool_dict.get(tool_name)
+        if tool_to_use is None:
+            raise ValueError(f"Unknown tool: {tool_name}")
+        
+        observation = tool_to_use.invoke(tool_args) #execute the tool
+        print(f"    [Tool Result] {observation}")
+        messages.append(ai_message) #add ai message to history
+        messages.append(ToolMessage(content=str(observation), tool_call_id=tool_call_id)) #add tool result to history
 
+    print("ERROR: MAX ITERATIONS REACHED")
+    return None
 
 
 if __name__=="__main__":
